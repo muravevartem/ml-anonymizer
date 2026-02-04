@@ -10,15 +10,12 @@ class ConnectionCreate(BaseModel):
     password: str
     database: str
 
-
 class ConnectionResponse(BaseModel):
     id: int
     host: str
     port: int
     username: str
-    password: str
     database: str
-
 
 class ColumnResponse(BaseModel):
     name: str

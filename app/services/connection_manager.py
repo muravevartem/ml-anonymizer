@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import HTTPException
 from sqlalchemy import create_engine, select, inspect
 from sqlalchemy.orm.session import Session
@@ -8,19 +10,31 @@ from app.schemas.connections import ConnectionResponse, ConnectionCreate, Databa
 
 
 class ConnectionManager:
-    def create_connection(self, db: Session, request: ConnectionCreate) -> ConnectionResponse:
+    @staticmethod
+    def create_connection(db: Session, request: ConnectionCreate) -> ConnectionResponse:
         new_db_connection = DbConnection(username=request.username, password=request.password, host=request.host,
                                          database=request.database, port=request.port, )
         db.add(new_db_connection)
         db.commit()
         db.refresh(new_db_connection)
         return ConnectionResponse(id=new_db_connection.id, username=new_db_connection.username,
-                                  password=new_db_connection.password,
                                   database=new_db_connection.database,
                                   port=new_db_connection.port,
                                   host=new_db_connection.host, )
 
-    def get_database_info(self, db: Session, connection_id: int) -> DatabaseResponse:
+    @staticmethod
+    def get_connections(db: Session) -> List[ConnectionResponse]:
+        connections = db.query(DbConnection).all()
+        return [ConnectionResponse(id=connection.id, username=connection.username, database=connection.database,
+                                   host=connection.host, port=connection.port) for
+                connection in connections]
+
+    @staticmethod
+    def delete_connection(db: Session, connection_id: int):
+        db.query(DbConnection).filter(DbConnection.id == connection_id).delete()
+
+    @staticmethod
+    def get_database_info(db: Session, connection_id: int) -> DatabaseResponse:
         result = db.execute(select(DbConnection).where(DbConnection.id == connection_id))
         db_connection: DbConnection | None = db.query(DbConnection).filter(DbConnection.id == connection_id).first()
         if db_connection is None:
